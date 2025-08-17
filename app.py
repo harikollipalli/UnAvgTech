@@ -397,51 +397,82 @@ def sitemap():
     response.headers['Content-Type'] = 'application/xml'
     return response
 
+@app.route('/test')
+def test():
+    """Simple test route to verify app is working"""
+    return "App is working! Database status: " + ("Connected" if get_db_connection() else "Not connected")
+
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Get categories with blogs count
-    cursor.execute('''
-        SELECT c.id, c.name, c.color, COUNT(b.id) as blog_count
-        FROM categories c
-        LEFT JOIN blogs b ON c.id = b.category_id
-        GROUP BY c.id, c.name, c.color
-        ORDER BY c.id
-    ''')
-    categories = cursor.fetchall()
-    
-    # Get recent blogs with category names
-    cursor.execute('''
-        SELECT b.*, c.name as category_name, c.color as category_color
-        FROM blogs b
-        JOIN categories c ON b.category_id = c.id
-        ORDER BY b.created_at DESC
-        LIMIT 6
-    ''')
-    blogs = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template('index.html', categories=categories, blogs=blogs)
+    try:
+        conn = get_db_connection()
+        if not conn:
+            # Return empty data if database connection fails
+            return render_template('index.html', categories=[], blogs=[])
+        
+        cursor = conn.cursor()
+        
+        # Get categories with blogs count
+        cursor.execute('''
+            SELECT c.id, c.name, c.color, COUNT(b.id) as blog_count
+            FROM categories c
+            LEFT JOIN blogs b ON c.id = b.category_id
+            GROUP BY c.id, c.name, c.color
+            ORDER BY c.id
+        ''')
+        categories = cursor.fetchall()
+        
+        # Get recent blogs with category names
+        cursor.execute('''
+            SELECT b.*, c.name as category_name, c.color as category_color
+            FROM blogs b
+            JOIN categories c ON b.category_id = c.id
+            ORDER BY b.created_at DESC
+            LIMIT 6
+        ''')
+        blogs = cursor.fetchall()
+        
+        conn.close()
+        
+        return render_template('index.html', categories=categories, blogs=blogs)
+        
+    except Exception as e:
+        print(f"Index route error: {e}")
+        # Return empty data if database query fails
+        try:
+            conn.close()
+        except:
+            pass
+        return render_template('index.html', categories=[], blogs=[])
 
 @app.route('/categories')
 def categories():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT c.*, COUNT(b.id) as blog_count
-        FROM categories c
-        LEFT JOIN blogs b ON c.id = b.category_id
-        GROUP BY c.id, c.name, c.color
-        ORDER BY c.id
-    ''')
-    categories = cursor.fetchall()
-    
-    conn.close()
-    return render_template('categories.html', categories=categories)
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return render_template('categories.html', categories=[])
+        
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT c.*, COUNT(b.id) as blog_count
+            FROM categories c
+            LEFT JOIN blogs b ON c.id = b.category_id
+            GROUP BY c.id, c.name, c.color
+            ORDER BY c.id
+        ''')
+        categories = cursor.fetchall()
+        
+        conn.close()
+        return render_template('categories.html', categories=categories)
+        
+    except Exception as e:
+        print(f"Categories route error: {e}")
+        try:
+            conn.close()
+        except:
+            pass
+        return render_template('categories.html', categories=[])
 
 @app.route('/category/<int:category_id>')
 def category(category_id):
