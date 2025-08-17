@@ -402,9 +402,55 @@ def test():
     """Simple test route to verify app is working"""
     return "App is working! Database status: " + ("Connected" if get_db_connection() else "Not connected")
 
+@app.route('/debug')
+def debug():
+    """Debug route to show deployment information"""
+    import os
+    
+    debug_info = {
+        "Working Directory": os.getcwd(),
+        "Files in Root": os.listdir('.'),
+        "Templates Directory": "Exists" if os.path.exists('templates') else "Missing",
+        "Templates Files": os.listdir('templates') if os.path.exists('templates') else "N/A",
+        "Database URL": os.environ.get('DATABASE_URL', 'Not set')[:30] + "..." if os.environ.get('DATABASE_URL') else 'Not set',
+        "Python Version": os.sys.version,
+        "Environment": "Production" if os.environ.get('DATABASE_URL') else "Development"
+    }
+    
+    html = "<!DOCTYPE html><html><head><title>Debug Info</title></head><body><h1>🔍 Debug Information</h1>"
+    for key, value in debug_info.items():
+        html += f"<p><strong>{key}:</strong> {value}</p>"
+    html += "</body></html>"
+    
+    return html
+
 @app.route('/')
 def index():
     try:
+        # First check if templates directory exists
+        if not os.path.exists('templates') or not os.path.exists('templates/index.html'):
+            # Return a simple HTML response if templates are missing
+            return f'''
+            <!DOCTYPE html>
+            <html>
+            <head><title>UnAvg Tech</title></head>
+            <body>
+                <h1>🚀 UnAvg Tech is Running!</h1>
+                <p>Database initialization: ✅ Success</p>
+                <p>Templates: ❌ Missing (deployment issue)</p>
+                <p>Status: App is working, but templates need to be deployed</p>
+                <hr>
+                <p><strong>Next steps:</strong></p>
+                <ol>
+                    <li>Check if templates directory exists in Railway</li>
+                    <li>Verify all files were pushed to GitHub</li>
+                    <li>Check Railway build logs</li>
+                </ol>
+                <p><a href="/test">Test Route</a> | <a href="/debug">Debug Info</a></p>
+            </body>
+            </html>
+            '''
+        
         conn = get_db_connection()
         if not conn:
             # Return empty data if database connection fails
@@ -434,16 +480,33 @@ def index():
         
         conn.close()
         
-        return render_template('index.html', categories=categories, blogs=blogs)
+        # Try to use Flask template first
+        try:
+            return render_template('index.html', categories=categories, blogs=blogs)
+        except Exception as template_error:
+            print(f"Template error: {template_error}")
+            # Use embedded template as fallback
+            from templates_embedded import render_embedded_template
+            return render_embedded_template('index.html', categories=categories, blogs=blogs)
         
     except Exception as e:
         print(f"Index route error: {e}")
-        # Return empty data if database query fails
+        # Return a simple HTML response if anything fails
         try:
             conn.close()
         except:
             pass
-        return render_template('index.html', categories=[], blogs=[])
+        return f'''
+        <!DOCTYPE html>
+        <html>
+        <head><title>UnAvg Tech - Error</title></head>
+        <body>
+            <h1>⚠️ Error Occurred</h1>
+            <p><strong>Error:</strong> {str(e)}</p>
+            <p><a href="/test">Test Route</a> | <a href="/debug">Debug Info</a></p>
+        </body>
+        </html>
+        '''
 
 @app.route('/categories')
 def categories():
@@ -464,7 +527,14 @@ def categories():
         categories = cursor.fetchall()
         
         conn.close()
-        return render_template('categories.html', categories=categories)
+        # Try to use Flask template first
+        try:
+            return render_template('categories.html', categories=categories)
+        except Exception as template_error:
+            print(f"Template error: {template_error}")
+            # Use embedded template as fallback
+            from templates_embedded import render_embedded_template
+            return render_embedded_template('categories.html', categories=categories)
         
     except Exception as e:
         print(f"Categories route error: {e}")
@@ -472,7 +542,12 @@ def categories():
             conn.close()
         except:
             pass
-        return render_template('categories.html', categories=[])
+        # Try embedded template as fallback
+        try:
+            from templates_embedded import render_embedded_template
+            return render_embedded_template('categories.html', categories=[])
+        except:
+            return f'<h1>Categories</h1><p>Error loading categories</p><a href="/">← Back to Home</a>'
 
 @app.route('/category/<int:category_id>')
 def category(category_id):
