@@ -4,6 +4,8 @@ import random
 import os
 from datetime import datetime
 from urllib.parse import urljoin
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -19,9 +21,72 @@ def get_random_color():
     return random.choice(COLORS)
 
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Get database connection - supports both SQLite (local) and PostgreSQL (deployment)"""
+    # Check if we're in deployment (PostgreSQL) or local development (SQLite)
+    database_url = os.environ.get('DATABASE_URL')
+    
+    if database_url:
+        # PostgreSQL deployment
+        try:
+            conn = psycopg2.connect(database_url)
+            return conn
+        except Exception as e:
+            print(f"PostgreSQL connection error: {e}")
+            return None
+    else:
+        # SQLite local development
+        try:
+            conn = sqlite3.connect('database.db')
+            conn.row_factory = sqlite3.Row
+            return conn
+        except Exception as e:
+            print(f"SQLite connection error: {e}")
+            return None
+
+def init_database():
+    """Initialize database tables if they don't exist"""
+    conn = get_db_connection()
+    if not conn:
+        print("Failed to connect to database")
+        return False
+    
+    try:
+        cursor = conn.cursor()
+        
+        # Check if we're using PostgreSQL or SQLite
+        if os.environ.get('DATABASE_URL'):
+            # PostgreSQL - create tables if they don't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS visitors (
+                    id SERIAL PRIMARY KEY,
+                    page TEXT NOT NULL,
+                    ip_address VARCHAR(45),
+                    user_agent TEXT,
+                    visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        else:
+            # SQLite - create tables if they don't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS visitors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    page TEXT NOT NULL,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        try:
+            conn.close()
+        except:
+            pass
+        return False
 
 # Visitor tracking middleware
 @app.before_request
@@ -35,15 +100,41 @@ def track_visitor():
     ip_address = request.remote_addr
     user_agent = request.headers.get('User-Agent', 'Unknown')
     
-    # Log the visit
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO visitors (page, ip_address, user_agent, visited_at)
-        VALUES (?, ?, ?, ?)
-    ''', (page, ip_address, user_agent, datetime.now()))
-    conn.commit()
-    conn.close()
+    try:
+        # Initialize database if needed
+        init_database()
+        
+        # Log the visit
+        conn = get_db_connection()
+        if not conn:
+            return  # Skip tracking if database connection fails
+        
+        cursor = conn.cursor()
+        
+        # Use appropriate parameter style for database type
+        if os.environ.get('DATABASE_URL'):
+            # PostgreSQL
+            cursor.execute('''
+                INSERT INTO visitors (page, ip_address, user_agent, visited_at)
+                VALUES (%s, %s, %s, %s)
+            ''', (page, ip_address, user_agent, datetime.now()))
+        else:
+            # SQLite
+            cursor.execute('''
+                INSERT INTO visitors (page, ip_address, user_agent, visited_at)
+                VALUES (?, ?, ?, ?)
+            ''', (page, ip_address, user_agent, datetime.now()))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # If there's any database error, just log it and continue
+        # This prevents the app from crashing if there are database issues
+        print(f"Visitor tracking error: {e}")
+        try:
+            conn.close()
+        except:
+            pass
 
 @app.route('/sitemap.xml')
 def sitemap():
@@ -623,5 +714,12 @@ def share_blog(blog_id, platform):
         return redirect(url_for('blog', blog_id=blog_id))
 
 if __name__ == "__main__":
+    # Initialize database on startup
+    print("Initializing database...")
+    if init_database():
+        print("Database initialized successfully!")
+    else:
+        print("Database initialization failed, but continuing...")
+    
     port = int(os.environ.get("PORT", 5000))  
     app.run(host="0.0.0.0", port=port, debug=False)
