@@ -62,7 +62,64 @@ def init_database():
         
         # Check if we're using PostgreSQL or SQLite
         if os.environ.get('DATABASE_URL') and POSTGRES_AVAILABLE:
-            # PostgreSQL - create tables if they don't exist
+            # PostgreSQL - create all tables if they don't exist
+            print("Creating PostgreSQL tables...")
+            
+            # Create users table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL
+                )
+            ''')
+            
+            # Create categories table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS categories (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) UNIQUE NOT NULL,
+                    color VARCHAR(7) NOT NULL
+                )
+            ''')
+            
+            # Create blogs table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS blogs (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    category_id INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    likes INTEGER DEFAULT 0,
+                    dislikes INTEGER DEFAULT 0,
+                    FOREIGN KEY (category_id) REFERENCES categories (id)
+                )
+            ''')
+            
+            # Create reviews table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS reviews (
+                    id SERIAL PRIMARY KEY,
+                    blog_id INTEGER NOT NULL,
+                    text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (blog_id) REFERENCES blogs (id)
+                )
+            ''')
+            
+            # Create contacts table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create visitors table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS visitors (
                     id SERIAL PRIMARY KEY,
@@ -72,8 +129,74 @@ def init_database():
                     visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Insert default data
+            cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s) ON CONFLICT (username) DO NOTHING', ('Hari', 'Life@123'))
+            
+            default_categories = [
+                ('Technology', '#3B82F6'),
+                ('Lifestyle', '#10B981'),
+                ('Travel', '#F59E0B'),
+                ('Food', '#EF4444'),
+                ('Health', '#8B5CF6')
+            ]
+            
+            for name, color in default_categories:
+                cursor.execute('INSERT INTO categories (name, color) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING', (name, color))
+                
         else:
-            # SQLite - create tables if they don't exist
+            # SQLite - create all tables if they don't exist
+            print("Creating SQLite tables...")
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    color TEXT NOT NULL
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS blogs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    category_id INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    likes INTEGER DEFAULT 0,
+                    dislikes INTEGER DEFAULT 0,
+                    FOREIGN KEY (category_id) REFERENCES categories (id)
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS reviews (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    blog_id INTEGER NOT NULL,
+                    text TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (blog_id) REFERENCES blogs (id)
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS visitors (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,9 +206,24 @@ def init_database():
                     visited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Insert default data for SQLite
+            cursor.execute('INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)', ('Hari', 'Life@123'))
+            
+            default_categories = [
+                ('Technology', '#3B82F6'),
+                ('Lifestyle', '#10B981'),
+                ('Travel', '#F59E0B'),
+                ('Food', '#EF4444'),
+                ('Health', '#8B5CF6')
+            ]
+            
+            for name, color in default_categories:
+                cursor.execute('INSERT OR IGNORE INTO categories (name, color) VALUES (?, ?)', (name, color))
         
         conn.commit()
         conn.close()
+        print("Database initialization completed successfully!")
         return True
     except Exception as e:
         print(f"Database initialization error: {e}")
@@ -146,18 +284,51 @@ def track_visitor():
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate XML sitemap for SEO"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Get all blogs
-    cursor.execute('SELECT id, title, created_at FROM blogs ORDER BY created_at DESC')
-    blogs = cursor.fetchall()
-    
-    # Get all categories
-    cursor.execute('SELECT id, name FROM categories')
-    categories = cursor.fetchall()
-    
-    conn.close()
+    try:
+        conn = get_db_connection()
+        if not conn:
+            # Return basic sitemap if database connection fails
+            base_url = request.url_root.rstrip('/')
+            sitemap_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{base_url}/</loc>
+        <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>'''
+            response = make_response(sitemap_xml)
+            response.headers['Content-Type'] = 'application/xml'
+            return response
+        
+        cursor = conn.cursor()
+        
+        # Get all blogs
+        cursor.execute('SELECT id, title, created_at FROM blogs ORDER BY created_at DESC')
+        blogs = cursor.fetchall()
+        
+        # Get all categories
+        cursor.execute('SELECT id, name FROM categories')
+        categories = cursor.fetchall()
+        
+        conn.close()
+    except Exception as e:
+        print(f"Sitemap generation error: {e}")
+        # Return basic sitemap if database query fails
+        base_url = request.url_root.rstrip('/')
+        sitemap_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{base_url}/</loc>
+        <lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>'''
+        response = make_response(sitemap_xml)
+        response.headers['Content-Type'] = 'application/xml'
+        return response
     
     # Base URL - change this to your actual domain
     base_url = request.url_root.rstrip('/')
