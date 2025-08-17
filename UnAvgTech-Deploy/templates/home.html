@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome to Hari's Blog</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { color: #333; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 10px 0; }
+        a { text-decoration: none; color: #0077cc; }
+    </style>
+</head>
+<body>
+    <h1>📚 Explore Blog Categories</h1>
+    <ul>
+        {% for cat in categories %}
+            <li><a href="/category/{{ cat[0] }}">{{ cat[1] }}</a></li>
+        {% endfor %}
+    </ul>
+    {% if not categories %}
+        <p>😅 No categories yet! Admin is probably still sipping chai.</p>
+    {% endif %}
+</body>
+</html>

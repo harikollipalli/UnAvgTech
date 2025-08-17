@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ blog.title }} - UnAvg Tech{% endblock %}
+
+{% block content %}
+<div class="blog-detail">
+    <!-- Blog Header -->
+    <div class="blog-header">
+        <div class="blog-category" style="background-color: {{ blog.category_color }};">
+            {{ blog.category_name }}
+        </div>
+        <h1 class="blog-title">{{ blog.title }}</h1>
+        <div class="blog-meta">
+            <span class="blog-date">{{ blog.created_at.split(' ')[0] if blog.created_at else 'Recently' }}</span>
+            <div class="blog-actions">
+                <button class="like-btn" onclick="likeBlog({{ blog.id }})">
+                    👍 <span class="like-count" id="likes-{{ blog.id }}">{{ blog.likes or 0 }}</span>
+                </button>
+                <button class="dislike-btn" onclick="dislikeBlog({{ blog.id }})">
+                    👎 <span class="dislike-count" id="dislikes-{{ blog.id }}">{{ blog.dislikes or 0 }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blog Content -->
+    <div class="blog-content">
+        {{ blog.content | safe }}
+    </div>
+
+    <!-- Share Buttons -->
+    <div class="share-section">
+        <h4>Share this post:</h4>
+        <div class="share-buttons">
+            <a href="{{ url_for('share_blog', blog_id=blog.id, platform='whatsapp') }}" 
+               class="share-btn whatsapp" title="Share on WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="{{ url_for('share_blog', blog_id=blog.id, platform='facebook') }}" 
+               class="share-btn facebook" title="Share on Facebook">
+                <i class="fab fa-facebook"></i>
+            </a>
+            <a href="{{ url_for('share_blog', blog_id=blog.id, platform='twitter') }}" 
+               class="share-btn twitter" title="Share on Twitter">
+                <i class="fab fa-twitter"></i>
+            </a>
+            <a href="{{ url_for('share_blog', blog_id=blog.id, platform='linkedin') }}" 
+               class="share-btn linkedin" title="Share on LinkedIn">
+                <i class="fab fa-linkedin"></i>
+            </a>
+            <a href="{{ url_for('share_blog', blog_id=blog.id, platform='telegram') }}" 
+               class="share-btn telegram" title="Share on Telegram">
+                <i class="fab fa-telegram"></i>
+            </a>
+            <button onclick="copyToClipboard('{{ request.url_root.rstrip('/') }}/blog/{{ blog.id }}')" 
+                    class="share-btn copy" title="Copy Link">
+                <i class="fas fa-link"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="reviews-section">
+        <h3>Reviews</h3>
+        
+        <!-- Review Form -->
+        <div class="review-form">
+            <form method="POST" action="/blog/{{ blog.id }}/review">
+                <div class="form-group">
+                    <label for="review_text" class="form-label">Write a Review</label>
+                    <textarea id="review_text" name="review_text" class="form-textarea" placeholder="Share your thoughts about this blog post..." required></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Submit Review</button>
+            </form>
+        </div>
+
+        <!-- Reviews List -->
+        {% if reviews %}
+            <div class="reviews-list">
+                {% for review in reviews %}
+                <div class="review-item">
+                    <p class="review-text">{{ review.review_text }}</p>
+                    <span class="review-date">{{ review.created_at.split(' ')[0] if review.created_at else 'Recently' }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-reviews">No reviews yet. Be the first to share your thoughts!</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const btn = event.target.closest('.share-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = '#10B981';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+
+{% endblock %}

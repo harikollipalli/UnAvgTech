@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} - UnAvg Tech{% endblock %}
+
+{% block content %}
+<div class="category-detail">
+    <!-- Category Header -->
+    <div class="category-header" style="background-color: {{ category.color }};">
+        <h1>{{ category.name }}</h1>
+        <p>Explore all blogs in this category</p>
+    </div>
+    
+    {% if blogs %}
+        <div class="blogs-section">
+            <div class="blog-grid">
+                {% for blog in blogs %}
+                <div class="blog-card">
+                    <div class="blog-category" style="background-color: {{ blog.category_color }};">
+                        {{ blog.category_name }}
+                    </div>
+                    <h3 class="blog-title">{{ blog.title }}</h3>
+                    <p class="blog-snippet">{{ blog.content[:150] }}{% if blog.content|length > 150 %}...{% endif %}</p>
+                    <div class="blog-meta">
+                        <span class="blog-date">{{ blog.created_at.split(' ')[0] if blog.created_at else 'Recently' }}</span>
+                        <div class="blog-actions">
+                            <button class="like-btn" onclick="likeBlog({{ blog.id }})">
+                                👍 <span class="like-count" id="likes-{{ blog.id }}">{{ blog.likes or 0 }}</span>
+                            </button>
+                            <button class="dislike-btn" onclick="dislikeBlog({{ blog.id }})">
+                                👎 <span class="dislike-count" id="dislikes-{{ blog.id }}">{{ blog.dislikes or 0 }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <a href="/blog/{{ blog.id }}" class="read-more-btn">Read More</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="no-blogs">
+            <p>No blogs in this category yet.</p>
+            <a href="/" class="back-home-btn">Back to Home</a>
+        </div>
+    {% endif %}
+</div>
+
+
+
+<style>
+.category-detail {
+    margin-top: 80px;
+}
+
+.category-header {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: white;
+    margin-bottom: 3rem;
+}
+
+.category-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.category-header p {
+    font-size: 1.3rem;
+    opacity: 0.9;
+}
+
+.blogs-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.no-blogs {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #64748b;
+}
+
+.no-blogs p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.back-home-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.back-home-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .category-header h1 {
+        font-size: 2rem;
+    }
+    
+    .category-header p {
+        font-size: 1.1rem;
+    }
+    
+    .blogs-section {
+        padding: 0 1rem;
+    }
+}
+</style>
+{% endblock %}

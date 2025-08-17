@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - UnAvg Tech{% endblock %}
+
+{% block content %}
+<div class="categories-page">
+    <div class="categories-header">
+        <h1>Blog Categories</h1>
+        <p>Explore blogs by topic</p>
+    </div>
+    
+    <div class="categories-grid">
+        {% for category in categories %}
+        <a href="/category/{{ category.id }}" class="category-card" style="background-color: {{ category.color }};">
+            <h3>{{ category.name }}</h3>
+            <span class="category-arrow">→</span>
+        </a>
+        {% endfor %}
+    </div>
+    
+    {% if not categories %}
+    <div class="no-categories">
+        <p>No categories available yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.categories-page {
+    max-width: 1200px;
+    margin: 100px auto 0;
+    padding: 0 2rem;
+}
+
+.categories-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.categories-header h1 {
+    color: #1e293b;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.categories-header p {
+    color: #64748b;
+    font-size: 1.2rem;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.category-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    border-radius: 16px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    color: white;
+    text-decoration: none;
+}
+
+.category-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.category-arrow {
+    font-size: 2rem;
+    font-weight: 300;
+    opacity: 0.8;
+}
+
+.no-categories {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+@media (max-width: 768px) {
+    .categories-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .categories-header h1 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
