@@ -4,8 +4,15 @@ import random
 import os
 from datetime import datetime
 from urllib.parse import urljoin
-import psycopg2
-from psycopg2.extras import RealDictCursor
+
+# Try to import PostgreSQL modules, but don't fail if they're not available
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+    print("Warning: psycopg2 not available. PostgreSQL support disabled.")
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -25,7 +32,7 @@ def get_db_connection():
     # Check if we're in deployment (PostgreSQL) or local development (SQLite)
     database_url = os.environ.get('DATABASE_URL')
     
-    if database_url:
+    if database_url and POSTGRES_AVAILABLE:
         # PostgreSQL deployment
         try:
             conn = psycopg2.connect(database_url)
@@ -34,7 +41,7 @@ def get_db_connection():
             print(f"PostgreSQL connection error: {e}")
             return None
     else:
-        # SQLite local development
+        # SQLite local development or fallback
         try:
             conn = sqlite3.connect('database.db')
             conn.row_factory = sqlite3.Row
@@ -54,7 +61,7 @@ def init_database():
         cursor = conn.cursor()
         
         # Check if we're using PostgreSQL or SQLite
-        if os.environ.get('DATABASE_URL'):
+        if os.environ.get('DATABASE_URL') and POSTGRES_AVAILABLE:
             # PostgreSQL - create tables if they don't exist
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS visitors (
@@ -112,7 +119,7 @@ def track_visitor():
         cursor = conn.cursor()
         
         # Use appropriate parameter style for database type
-        if os.environ.get('DATABASE_URL'):
+        if os.environ.get('DATABASE_URL') and POSTGRES_AVAILABLE:
             # PostgreSQL
             cursor.execute('''
                 INSERT INTO visitors (page, ip_address, user_agent, visited_at)
