@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>{% block title %}UnAvg Tech - Read, Explore, Discover{% endblock %}</title>
+    <meta name="title" content="{% block meta_title %}UnAvg Tech - Read, Explore, Discover{% endblock %}">
+    <meta name="description" content="{% block meta_description %}UnAvg Tech is a place to read, explore, and discover. Find insightful articles on technology, lifestyle, travel, food, health, and more.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}technology, lifestyle, travel, food, health, blog, articles, insights, discovery{% endblock %}">
+    <meta name="author" content="UnAvg Tech">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}UnAvg Tech - Read, Explore, Discover{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}UnAvg Tech is a place to read, explore, and discover. Find insightful articles on technology, lifestyle, travel, food, health, and more.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
+    <meta property="og:site_name" content="UnAvg Tech">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="{% block twitter_title %}UnAvg Tech - Read, Explore, Discover{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}UnAvg Tech is a place to read, explore, and discover. Find insightful articles on technology, lifestyle, travel, food, health, and more.{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}{{ url_for('static', filename='images/og-image.jpg', _external=True) }}{% endblock %}">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#0d9488">
+    <meta name="msapplication-TileColor" content="#0d9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="UnAvg Tech">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "UnAvg Tech",
+        "url": "{{ request.url_root.rstrip('/') }}",
+        "logo": "{{ url_for('static', filename='images/logo.png', _external=True) }}",
+        "description": "UnAvg Tech is a place to read, explore, and discover. Find insightful articles on technology, lifestyle, travel, food, health, and more.",
+        "sameAs": [
+            "https://twitter.com/unavgtech",
+            "https://facebook.com/unavgtech",
+            "https://linkedin.com/company/unavgtech"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "url": "{{ url_for('contact', _external=True) }}"
+        }
+    }
+    </script>
+    
+    <!-- Structured Data for Website -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "UnAvg Tech",
+        "url": "{{ request.url_root.rstrip('/') }}",
+        "description": "UnAvg Tech is a place to read, explore, and discover. Find insightful articles on technology, lifestyle, travel, food, health, and more.",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "{{ request.url_root.rstrip('/') }}/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-brand">UnAvg Tech</a>
+            <div class="navbar-nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/categories" class="nav-link">Categories</a>
+                <a href="/about" class="nav-link">About</a>
+                <a href="/contact" class="nav-link">Contact</a>
+                <div class="search-container">
+                    <form action="/search" method="GET" class="search-form">
+                        <input type="text" name="q" placeholder="Search blogs..." class="search-input" 
+                               value="{{ request.args.get('q', '') }}" required>
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>UnAvg Tech</h3>
+                <p>A place to read, explore, and discover.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/categories">Categories</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="https://twitter.com/unavgtech" target="_blank" rel="noopener">Twitter</a></li>
+                    <li><a href="https://facebook.com/unavgtech" target="_blank" rel="noopener">Facebook</a></li>
+                    <li><a href="https://linkedin.com/company/unavgtech" target="_blank" rel="noopener">LinkedIn</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 UnAvg Tech. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div id="popup" class="flash-message">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    
+    <!-- Google Analytics (replace with your tracking ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Allow all search engines to crawl the site
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /admin/login
+
+# Allow important pages
+Allow: /
+Allow: /search
+Allow: /about
+Allow: /contact
+Allow: /categories
+Allow: /blog/
+Allow: /category/
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl delay (optional - be respectful to servers)
+Crawl-delay: 1

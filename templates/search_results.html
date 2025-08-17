@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results for "{{ query }}" - UnAvg Tech{% endblock %}
+
+{% block content %}
+<div class="search-results-container">
+    <div class="search-header">
+        <h1>Search Results</h1>
+        <p class="search-query">Showing results for: <strong>"{{ query }}"</strong></p>
+        <p class="results-count">{{ blogs|length }} blog{{ 's' if blogs|length != 1 else '' }} found</p>
+    </div>
+
+    {% if blogs %}
+        <div class="search-results">
+            {% for blog in blogs %}
+            <div class="search-result-item">
+                <div class="result-category">
+                    <span class="category-badge" style="background-color: {{ blog.category_color }};">
+                        {{ blog.category_name }}
+                    </span>
+                </div>
+                
+                <h2 class="result-title">
+                    <a href="{{ url_for('blog', blog_id=blog.id) }}">{{ blog.title }}</a>
+                </h2>
+                
+                <div class="result-snippet">
+                    {% set content_preview = blog.content[:200] + "..." if blog.content|length > 200 else blog.content %}
+                    {{ content_preview }}
+                </div>
+                
+                <div class="result-meta">
+                    <span class="result-date">{{ blog.created_at.split(' ')[0] if blog.created_at else 'Unknown date' }}</span>
+                    <div class="result-actions">
+                        <span class="likes">👍 {{ blog.likes or 0 }}</span>
+                        <span class="dislikes">👎 {{ blog.dislikes or 0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="result-actions-buttons">
+                    <a href="{{ url_for('blog', blog_id=blog.id) }}" class="read-more-btn">Read Full Article</a>
+                    <div class="share-buttons">
+                        <a href="{{ url_for('share_blog', blog_id=blog.id, platform='whatsapp') }}" 
+                           class="share-btn whatsapp" title="Share on WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="{{ url_for('share_blog', blog_id=blog.id, platform='facebook') }}" 
+                           class="share-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="{{ url_for('share_blog', blog_id=blog.id, platform='twitter') }}" 
+                           class="share-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="{{ url_for('share_blog', blog_id=blog.id, platform='linkedin') }}" 
+                           class="share-btn linkedin" title="Share on LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="{{ url_for('share_blog', blog_id=blog.id, platform='telegram') }}" 
+                           class="share-btn telegram" title="Share on Telegram">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <button onclick="copyToClipboard('{{ request.url_root.rstrip('/') }}/blog/{{ blog.id }}')" 
+                                class="share-btn copy" title="Copy Link">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            <div class="no-results-icon">🔍</div>
+            <h2>No results found</h2>
+            <p>Sorry, no blogs match your search for "{{ query }}".</p>
+            <div class="suggestions">
+                <h3>Suggestions:</h3>
+                <ul>
+                    <li>Check your spelling</li>
+                    <li>Try different keywords</li>
+                    <li>Use more general terms</li>
+                    <li>Browse our <a href="{{ url_for('categories') }}">categories</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('index') }}" class="back-home-btn">Back to Home</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const btn = event.target.closest('.share-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.style.background = '#10B981';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}
